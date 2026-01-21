@@ -1,1 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DarkFlow AI – Lead Trust Score + Smart Routing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0e27;
+            color: #e0e6ed;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: linear-gradient(135deg, #1a1f3a 0%, #0f1429 100%);
+            border-bottom: 1px solid #2a2f4a;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: white;
+        }
+
+        .title-section h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.2rem;
+        }
+
+        .title-section p {
+            font-size: 0.85rem;
+            color: #8b92b0;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: #1f2438;
+            color: #e0e6ed;
+            border: 1px solid #2a2f4a;
+        }
+
+        .btn-secondary:hover {
+            background: #252a3f;
+            border-color: #3a3f5a;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 380px;
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        /* Left: Leads Queue */
+        .leads-panel {
+            background: #13172b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #1f2438;
+            height: fit-content;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border-radius: 2px;
+        }
+
+        .lead-card {
+            background: #1a1f3a;
+            border: 1px solid #252a3f;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lead-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: transparent;
+            transition: all 0.3s ease;
+        }
+
+        .lead-card:hover {
+            border-color: #3a3f5a;
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .lead-card:hover::before {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .lead-card.selected {
+            border-color: #6366f1;
+            background: #1f2540;
+        }
+
+        .lead-card.selected::before {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        }
+
+        .lead-card.new {
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .lead-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .lead-name {
+            font-weight: 600;
+            color: #ffffff;
+            font-size: 0.95rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-new {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .status-scored {
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .status-routed {
+            background: #10b981;
+            color: white;
+        }
+
+        .lead-details {
+            font-size: 0.8rem;
+            color: #8b92b0;
+            line-height: 1.5;
+        }
+
+        .lead-details div {
+            margin-bottom: 0.3rem;
+        }
+
+        .lead-source {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: #252a3f;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Center: Trust Score Panel */
+        .score-panel {
+            background: #13172b;
+            border-radius: 12px;
+            padding: 2rem;
+            border: 1px solid #1f2438;
+            min-height: 600px;
+        }
+
+        .score-panel.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5a5f7a;
+            font-size: 1.1rem;
+        }
+
+        .score-display {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .score-circle-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 1.5rem;
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .score-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-circle-bg {
+            fill: none;
+            stroke: #1f2438;
+            stroke-width: 12;
+        }
+
+        .score-circle-progress {
+            fill: none;
+            stroke: url(#gradient);
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 565.48;
+            stroke-dashoffset: 565.48;
+            transition: stroke-dashoffset 1.5s ease;
+        }
+
+        .score-value {
+            position: absolute;
+            font-size: 3rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .score-label {
+            font-size: 1.1rem;
+            color: #8b92b0;
+            margin-top: 0.5rem;
+        }
+
+        .sub-scores {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .sub-score {
+            background: #1a1f3a;
+            border: 1px solid #252a3f;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .sub-score-label {
+            font-size: 0.8rem;
+            color: #8b92b0;
+            margin-bottom: 0.5rem;
+        }
+
+        .sub-score-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .signals-section {
+            margin-top: 2rem;
+        }
+
+        .signals-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .signals-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .signal-chip {
+            background: #1a1f3a;
+            border: 1px solid #252a3f;
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            color: #e0e6ed;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .signal-chip::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        /* Right: Routing Timeline */
+        .routing-panel {
+            background: #13172b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #1f2438;
+            height: fit-content;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #1f2438;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -1.75rem;
+            top: 0.3rem;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #1f2438;
+            border: 2px solid #0a0e27;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item.active::before {
+            background: #6366f1;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+        }
+
+        .timeline-item.completed::before {
+            background: #10b981;
+        }
+
+        .timeline-item-title {
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+        }
+
+        .timeline-item-desc {
+            font-size: 0.8rem;
+            color: #8b92b0;
+        }
+
+        .routing-output {
+            margin-top: 2rem;
+            background: #1a1f3a;
+            border: 1px solid #252a3f;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .routing-output-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .routing-result {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .routing-result.tier-a {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .routing-result.tier-b {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .routing-result.hold {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .routing-result-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .routing-result.tier-a .routing-result-title {
+            color: #10b981;
+        }
+
+        .routing-result.tier-b .routing-result-title {
+            color: #fbbf24;
+        }
+
+        .routing-result.hold .routing-result-title {
+            color: #ef4444;
+        }
+
+        .routing-result-desc {
+            font-size: 0.85rem;
+            color: #8b92b0;
+        }
+
+        /* Impact Widget */
+        .impact-widget {
+            margin-top: 2rem;
+            background: linear-gradient(135deg, #1a1f3a 0%, #13172b 100%);
+            border: 1px solid #252a3f;
+            border-radius: 10px;
+            padding: 1.5rem;
+        }
+
+        .impact-widget-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .impact-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #1f2438;
+        }
+
+        .impact-metric:last-child {
+            border-bottom: none;
+        }
+
+        .impact-metric-label {
+            font-size: 0.9rem;
+            color: #8b92b0;
+        }
+
+        .impact-metric-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #10b981;
+        }
+
+        /* Tooltips/Bubbles */
+        .tooltip {
+            position: absolute;
+            background: #1a1f3a;
+            border: 1px solid #3a3f5a;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.85rem;
+            color: #e0e6ed;
+            max-width: 250px;
+            z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.3s ease;
+            pointer-events: none;
+        }
+
+        .tooltip::before {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border: 6px solid transparent;
+        }
+
+        .tooltip.top::before {
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-top-color: #1a1f3a;
+        }
+
+        .tooltip.bottom::before {
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-color: #1a1f3a;
+        }
+
+        .tooltip.left::before {
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-left-color: #1a1f3a;
+        }
+
+        .tooltip.right::before {
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-right-color: #1a1f3a;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #1f2438;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0e27;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2f4a;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3f5a;
+        }
+
+        /* Final CTA */
+        .final-cta {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: linear-gradient(135deg, #1a1f3a 0%, #13172b 100%);
+            border: 1px solid #3a3f5a;
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 400px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .final-cta.hidden {
+            display: none;
+        }
+
+        .final-cta-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .final-cta-desc {
+            font-size: 0.9rem;
+            color: #8b92b0;
+            margin-bottom: 1rem;
+        }
+
+        .final-cta-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        /* Highlight animation */
+        @keyframes highlight {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(99, 102, 241, 0.3);
+            }
+        }
+
+        .highlight {
+            animation: highlight 1.5s ease-in-out;
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo-section">
+            <div class="logo">DF</div>
+            <div class="title-section">
+                <h1>Lead Trust Score Engine</h1>
+                <p>Rank. Route. Improve outcomes.</p>
+            </div>
+        </div>
+        <div class="top-actions">
+            <button class="btn btn-secondary" id="resetBtn">Reset</button>
+            <button class="btn btn-primary" id="autoDemoBtn">Auto Demo</button>
+            <button class="btn btn-primary" id="bookCallBtn">Book 15-min build call</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left: Leads Queue -->
+        <div class="leads-panel">
+            <div class="panel-title">Incoming Leads Queue</div>
+            <div id="leadsContainer"></div>
+        </div>
+
+        <!-- Center: Trust Score Panel -->
+        <div class="score-panel" id="scorePanel">
+            <div class="empty">Select a lead to view Trust Score details</div>
+        </div>
+
+        <!-- Right: Routing Timeline -->
+        <div class="routing-panel">
+            <div class="panel-title">Routing + CRM Sync</div>
+            <div class="timeline" id="timeline">
+                <div class="timeline-item" data-step="arrive">
+                    <div class="timeline-item-title">Lead arrives</div>
+                    <div class="timeline-item-desc">New lead enters system</div>
+                </div>
+                <div class="timeline-item" data-step="enrich">
+                    <div class="timeline-item-title">Enrichment + verification</div>
+                    <div class="timeline-item-desc">Data validation & enhancement</div>
+                </div>
+                <div class="timeline-item" data-step="score">
+                    <div class="timeline-item-title">Trust Score generated</div>
+                    <div class="timeline-item-desc">AI calculates lead quality</div>
+                </div>
+                <div class="timeline-item" data-step="route">
+                    <div class="timeline-item-title">Decision: Route</div>
+                    <div class="timeline-item-desc">Tier A / Tier B / Hold</div>
+                </div>
+                <div class="timeline-item" data-step="crm">
+                    <div class="timeline-item-title">Push to CRM</div>
+                    <div class="timeline-item-desc">Sync with client system</div>
+                </div>
+                <div class="timeline-item" data-step="notify">
+                    <div class="timeline-item-title">Notify sales rep</div>
+                    <div class="timeline-item-desc">Alert assigned agent</div>
+                </div>
+                <div class="timeline-item" data-step="outcome">
+                    <div class="timeline-item-title">Log outcome</div>
+                    <div class="timeline-item-desc">Track performance metrics</div>
+                </div>
+            </div>
+
+            <div class="routing-output" id="routingOutput" style="display: none;">
+                <div class="routing-output-title">Routing Output</div>
+                <div id="routingResult"></div>
+            </div>
+
+            <div class="impact-widget" id="impactWidget" style="display: none;">
+                <div class="impact-widget-title">Client Impact</div>
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Connect rate uplift</span>
+                    <span class="impact-metric-value" id="connectRate">+0%</span>
+                </div>
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Hours saved/week</span>
+                    <span class="impact-metric-value" id="hoursSaved">0</span>
+                </div>
+                <div class="impact-metric">
+                    <span class="impact-metric-label">Lead waste reduced</span>
+                    <span class="impact-metric-value" id="wasteReduced">0%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final CTA -->
+    <div class="final-cta hidden" id="finalCta">
+        <div class="final-cta-title">Want this inside DarkFlow in 10–14 days?</div>
+        <div class="final-cta-desc">See how Trust Score + Smart Routing can transform your lead quality and connect rates.</div>
+        <div class="final-cta-actions">
+            <button class="btn btn-secondary" id="closeCtaBtn">Close</button>
+            <button class="btn btn-primary" id="bookCallBtn2">Book build call</button>
+        </div>
+    </div>
+
+    <script>
+        // Sample leads data
+        const leadsData = [
+            {
+                id: 1,
+                name: 'Sarah Chen',
+                phone: '(415) 555-0123',
+                email: 'sarah.chen@email.com',
+                industry: 'Real Estate',
+                source: 'Mortgage',
+                status: 'new',
+                score: 87,
+                subScores: { answerLikelihood: 92, intentStrength: 85, dataConfidence: 84 },
+                signals: ['Recently verified phone', 'Email deliverable', 'Local geo match', 'Open house attendance', 'High debt intent', 'Recent web activity'],
+                tier: 'A'
+            },
+            {
+                id: 2,
+                name: 'Michael Rodriguez',
+                phone: '(312) 555-0456',
+                email: 'm.rodriguez@email.com',
+                industry: 'Finance',
+                source: 'Finance',
+                status: 'new',
+                score: 72,
+                subScores: { answerLikelihood: 68, intentStrength: 75, dataConfidence: 73 },
+                signals: ['Email deliverable', 'Local geo match', 'Recent web activity'],
+                tier: 'B'
+            },
+            {
+                id: 3,
+                name: 'Emily Johnson',
+                phone: '(646) 555-0789',
+                email: 'ejohnson@email.com',
+                industry: 'Investment',
+                source: 'Alt Inv',
+                status: 'new',
+                score: 45,
+                subScores: { answerLikelihood: 42, intentStrength: 48, dataConfidence: 45 },
+                signals: ['Email deliverable'],
+                tier: 'Hold'
+            },
+            {
+                id: 4,
+                name: 'David Kim',
+                phone: '(213) 555-0321',
+                email: 'david.kim@email.com',
+                industry: 'Automotive',
+                source: 'Auto',
+                status: 'new',
+                score: 91,
+                subScores: { answerLikelihood: 95, intentStrength: 88, dataConfidence: 90 },
+                signals: ['Recently verified phone', 'Email deliverable', 'Local geo match', 'High debt intent', 'Recent web activity', 'Multiple form submissions'],
+                tier: 'A'
+            },
+            {
+                id: 5,
+                name: 'Lisa Thompson',
+                phone: '(404) 555-0654',
+                email: 'lthompson@email.com',
+                industry: 'Business Services',
+                source: 'Business',
+                status: 'new',
+                score: 65,
+                subScores: { answerLikelihood: 62, intentStrength: 68, dataConfidence: 65 },
+                signals: ['Email deliverable', 'Local geo match', 'Recent web activity'],
+                tier: 'B'
+            },
+            {
+                id: 6,
+                name: 'James Wilson',
+                phone: '(305) 555-0987',
+                email: 'j.wilson@email.com',
+                industry: 'Real Estate',
+                source: 'Mortgage',
+                status: 'new',
+                score: 38,
+                subScores: { answerLikelihood: 35, intentStrength: 40, dataConfidence: 39 },
+                signals: [],
+                tier: 'Hold'
+            },
+            {
+                id: 7,
+                name: 'Amanda Martinez',
+                phone: '(512) 555-0147',
+                email: 'amanda.m@email.com',
+                industry: 'Finance',
+                source: 'Finance',
+                status: 'new',
+                score: 79,
+                subScores: { answerLikelihood: 76, intentStrength: 82, dataConfidence: 79 },
+                signals: ['Recently verified phone', 'Email deliverable', 'Local geo match', 'High debt intent', 'Recent web activity'],
+                tier: 'A'
+            },
+            {
+                id: 8,
+                name: 'Robert Taylor',
+                phone: '(206) 555-0258',
+                email: 'rtaylor@email.com',
+                industry: 'Investment',
+                source: 'Alt Inv',
+                status: 'new',
+                score: 58,
+                subScores: { answerLikelihood: 55, intentStrength: 60, dataConfidence: 59 },
+                signals: ['Email deliverable', 'Recent web activity'],
+                tier: 'B'
+            }
+        ];
+
+        let currentLeads = [...leadsData];
+        let selectedLead = null;
+        let isDemoRunning = false;
+        let demoTimeout = null;
+        let tooltipElement = null;
+
+        // Initialize
+        function init() {
+            renderLeads();
+            setupEventListeners();
+        }
+
+        // Render leads
+        function renderLeads() {
+            const container = document.getElementById('leadsContainer');
+            container.innerHTML = '';
+
+            currentLeads.forEach(lead => {
+                const card = document.createElement('div');
+                card.className = `lead-card ${selectedLead?.id === lead.id ? 'selected' : ''}`;
+                card.dataset.leadId = lead.id;
+                
+                const statusClass = `status-${lead.status}`;
+                const statusText = lead.status.charAt(0).toUpperCase() + lead.status.slice(1);
+                
+                card.innerHTML = `
+                    <div class="lead-header">
+                        <div class="lead-name">${lead.name}</div>
+                        <div class="status-badge ${statusClass}">${statusText}</div>
+                    </div>
+                    <div class="lead-details">
+                        <div>${lead.phone}</div>
+                        <div>${lead.email}</div>
+                        <div>${lead.industry}</div>
+                        <div class="lead-source">${lead.source}</div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => selectLead(lead));
+                container.appendChild(card);
+            });
+        }
+
+        // Select lead
+        function selectLead(lead, force = false) {
+            if (isDemoRunning && !force) return;
+            
+            selectedLead = lead;
+            renderLeads();
+            
+            // Scroll to selected lead card within leads panel
+            setTimeout(() => {
+                const leadCard = document.querySelector(`[data-lead-id="${lead.id}"]`);
+                const leadsPanel = document.querySelector('.leads-panel');
+                if (leadCard && leadsPanel) {
+                    scrollWithinContainer(leadsPanel, leadCard);
+                }
+            }, 50);
+            
+            renderScorePanel(lead);
+        }
+
+        // Render score panel
+        function renderScorePanel(lead) {
+            const panel = document.getElementById('scorePanel');
+            
+            if (!lead) {
+                panel.innerHTML = '<div class="empty">Select a lead to view Trust Score details</div>';
+                panel.className = 'score-panel empty';
+                return;
+            }
+
+            panel.className = 'score-panel';
+            
+            const circumference = 2 * Math.PI * 90; // radius = 90
+            const offset = circumference - (lead.score / 100) * circumference;
+
+            panel.innerHTML = `
+                <svg width="0" height="0" style="position: absolute;">
+                    <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                </svg>
+                <div class="score-display">
+                    <div class="score-circle-container">
+                        <div class="score-circle">
+                            <svg width="200" height="200">
+                                <circle class="score-circle-bg" cx="100" cy="100" r="90"></circle>
+                                <circle class="score-circle-progress" cx="100" cy="100" r="90" 
+                                    stroke-dasharray="${circumference}" 
+                                    stroke-dashoffset="${circumference}"
+                                    data-offset="${offset}"></circle>
+                            </svg>
+                            <div class="score-value" id="scoreValue">0</div>
+                        </div>
+                        <div class="score-label">Trust Score</div>
+                    </div>
+                </div>
+                <div class="sub-scores">
+                    <div class="sub-score">
+                        <div class="sub-score-label">Answer Likelihood</div>
+                        <div class="sub-score-value" id="subScore1">0</div>
+                    </div>
+                    <div class="sub-score">
+                        <div class="sub-score-label">Intent Strength</div>
+                        <div class="sub-score-value" id="subScore2">0</div>
+                    </div>
+                    <div class="sub-score">
+                        <div class="sub-score-label">Data Confidence</div>
+                        <div class="sub-score-value" id="subScore3">0</div>
+                    </div>
+                </div>
+                <div class="signals-section">
+                    <div class="signals-title">Signals Detected</div>
+                    <div class="signals-grid">
+                        ${lead.signals.map(signal => `<div class="signal-chip">${signal}</div>`).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Scroll to score panel to ensure visibility
+            setTimeout(() => {
+                scrollToElement(panel, 120);
+            }, 50);
+
+            // Animate score counting
+            setTimeout(() => {
+                animateScore(lead.score, lead.subScores);
+            }, 100);
+        }
+
+        // Animate score counting
+        function animateScore(finalScore, subScores) {
+            const scoreValue = document.getElementById('scoreValue');
+            const progressCircle = document.querySelector('.score-circle-progress');
+            const subScore1 = document.getElementById('subScore1');
+            const subScore2 = document.getElementById('subScore2');
+            const subScore3 = document.getElementById('subScore3');
+
+            // Animate main score
+            let current = 0;
+            const duration = 1500;
+            const startTime = Date.now();
+
+            function updateScore() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                current = Math.floor(finalScore * progress);
+                scoreValue.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(updateScore);
+                } else {
+                    scoreValue.textContent = finalScore;
+                    if (progressCircle) {
+                        const offset = progressCircle.dataset.offset;
+                        progressCircle.style.strokeDashoffset = offset;
+                    }
+                }
+            }
+
+            // Animate sub scores
+            function animateSubScore(element, target) {
+                let current = 0;
+                const duration = 1500;
+                const startTime = Date.now();
+
+                function update() {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    current = Math.floor(target * progress);
+                    element.textContent = current;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(update);
+                    } else {
+                        element.textContent = target;
+                    }
+                }
+                update();
+            }
+
+            updateScore();
+            animateSubScore(subScore1, subScores.answerLikelihood);
+            animateSubScore(subScore2, subScores.intentStrength);
+            animateSubScore(subScore3, subScores.dataConfidence);
+        }
+
+        // Smooth scroll to element
+        function scrollToElement(element, offset = 100) {
+            if (!element) return;
+            
+            const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+            const offsetPosition = elementPosition - offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
+        }
+
+        // Scroll within a scrollable container
+        function scrollWithinContainer(container, targetElement) {
+            if (!container || !targetElement) return;
+            
+            const containerRect = container.getBoundingClientRect();
+            const targetRect = targetElement.getBoundingClientRect();
+            
+            const scrollTop = container.scrollTop;
+            const targetTop = targetElement.offsetTop - container.offsetTop;
+            const targetHeight = targetElement.offsetHeight;
+            const containerHeight = container.clientHeight;
+            
+            // Check if element is not fully visible
+            if (targetTop < scrollTop || targetTop + targetHeight > scrollTop + containerHeight) {
+                container.scrollTo({
+                    top: targetTop - (containerHeight / 2) + (targetHeight / 2),
+                    behavior: 'smooth'
+                });
+            }
+        }
+
+        // Highlight element
+        function highlightElement(element) {
+            if (!element) return;
+            element.classList.add('highlight');
+            setTimeout(() => {
+                element.classList.remove('highlight');
+            }, 1500);
+        }
+
+        // Show tooltip
+        function showTooltip(text, element, position = 'top') {
+            hideTooltip();
+            
+            tooltipElement = document.createElement('div');
+            tooltipElement.className = `tooltip ${position}`;
+            tooltipElement.textContent = text;
+            document.body.appendChild(tooltipElement);
+
+            const rect = element.getBoundingClientRect();
+            let left, top;
+
+            switch(position) {
+                case 'top':
+                    left = rect.left + (rect.width / 2) - (tooltipElement.offsetWidth / 2);
+                    top = rect.top - tooltipElement.offsetHeight - 10;
+                    break;
+                case 'bottom':
+                    left = rect.left + (rect.width / 2) - (tooltipElement.offsetWidth / 2);
+                    top = rect.bottom + 10;
+                    break;
+                case 'left':
+                    left = rect.left - tooltipElement.offsetWidth - 10;
+                    top = rect.top + (rect.height / 2) - (tooltipElement.offsetHeight / 2);
+                    break;
+                case 'right':
+                    left = rect.right + 10;
+                    top = rect.top + (rect.height / 2) - (tooltipElement.offsetHeight / 2);
+                    break;
+            }
+
+            tooltipElement.style.left = `${left}px`;
+            tooltipElement.style.top = `${top}px`;
+        }
+
+        // Hide tooltip
+        function hideTooltip() {
+            if (tooltipElement) {
+                tooltipElement.remove();
+                tooltipElement = null;
+            }
+        }
+
+        // Update timeline
+        function updateTimeline(step, status = 'active') {
+            const item = document.querySelector(`[data-step="${step}"]`);
+            if (item) {
+                item.className = `timeline-item ${status}`;
+            }
+        }
+
+        // Show routing output
+        function showRoutingOutput(tier, lead) {
+            const output = document.getElementById('routingOutput');
+            const result = document.getElementById('routingResult');
+            
+            let tierClass, tierTitle, tierDesc;
+            
+            if (tier === 'A') {
+                tierClass = 'tier-a';
+                tierTitle = 'Tier A: Instant Route';
+                tierDesc = 'Sent to CRM + instant call task assigned. High priority lead with excellent conversion potential. Sales rep receives immediate notification for fastest response time.';
+            } else if (tier === 'B') {
+                tierClass = 'tier-b';
+                tierTitle = 'Tier B: Nurture Campaign';
+                tierDesc = 'Sent to automated nurture sequence. Medium priority lead requiring follow-up engagement. Will be automatically nurtured through email sequences before assignment.';
+            } else {
+                tierClass = 'hold';
+                tierTitle = 'Hold: Manual Review';
+                tierDesc = 'Requires manual verification. Missing critical data or low confidence signals detected. Lead will be reviewed by quality assurance team before routing.';
+            }
+
+            result.innerHTML = `
+                <div class="routing-result ${tierClass}">
+                    <div class="routing-result-title">
+                        <span>${tierTitle}</span>
+                    </div>
+                    <div class="routing-result-desc">${tierDesc}</div>
+                </div>
+            `;
+
+            output.style.display = 'block';
+            
+            // Scroll within the routing panel if needed
+            setTimeout(() => {
+                const routingPanel = document.querySelector('.routing-panel');
+                const outputRect = output.getBoundingClientRect();
+                const panelRect = routingPanel.getBoundingClientRect();
+                
+                if (outputRect.bottom > panelRect.bottom || outputRect.top < panelRect.top) {
+                    output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 100);
+        }
+
+        // Update impact metrics
+        function updateImpactMetrics(lead) {
+            const widget = document.getElementById('impactWidget');
+            const connectRate = document.getElementById('connectRate');
+            const hoursSaved = document.getElementById('hoursSaved');
+            const wasteReduced = document.getElementById('wasteReduced');
+
+            let connectUplift, hours, waste;
+            
+            if (lead.tier === 'A') {
+                connectUplift = '+34%';
+                hours = '12';
+                waste = '28%';
+            } else if (lead.tier === 'B') {
+                connectUplift = '+18%';
+                hours = '8';
+                waste = '15%';
+            } else {
+                connectUplift = '+5%';
+                hours = '3';
+                waste = '8%';
+            }
+
+            connectRate.textContent = connectUplift;
+            hoursSaved.textContent = hours;
+            wasteReduced.textContent = waste;
+
+            widget.style.display = 'block';
+            
+            // Scroll within routing panel if needed
+            setTimeout(() => {
+                const routingPanel = document.querySelector('.routing-panel');
+                if (routingPanel) {
+                    scrollWithinContainer(routingPanel, widget);
+                }
+            }, 100);
+        }
+
+        // Auto demo
+        async function runAutoDemo() {
+            if (isDemoRunning) return;
+            
+            isDemoRunning = true;
+            document.getElementById('autoDemoBtn').disabled = true;
+            document.getElementById('autoDemoBtn').textContent = 'Demo Running...';
+            
+            // Reset state
+            resetDemo();
+            await delay(800);
+
+            const demoLeads = [
+                { lead: currentLeads[0], delay: 4000 }, // High score
+                { lead: currentLeads[1], delay: 5000 }, // Medium score
+                { lead: currentLeads[2], delay: 5000 }  // Low score
+            ];
+
+            for (let i = 0; i < demoLeads.length; i++) {
+                const { lead, delay: leadDelay } = demoLeads[i];
+                
+                // Step 1: Lead arrives
+                const leadsPanel = document.querySelector('.leads-panel');
+                scrollToElement(leadsPanel, 120);
+                await delay(600);
+                showTooltip('New lead detected in queue. The system automatically captures incoming leads from multiple sources.', leadsPanel, 'right');
+                updateTimeline('arrive', 'active');
+                highlightElement(leadsPanel);
+                await delay(4000); // Longer delay for reading
+                hideTooltip();
+                updateTimeline('arrive', 'completed');
+                
+                // Add lead animation
+                const leadCard = document.querySelector(`[data-lead-id="${lead.id}"]`);
+                if (leadCard) {
+                    leadCard.classList.add('new');
+                    scrollToElement(leadCard, 120);
+                    await delay(800);
+                }
+                await delay(1000);
+
+                // Step 2: Enrichment
+                const enrichTimelineItem = document.querySelector('.timeline-item[data-step="enrich"]');
+                scrollToElement(enrichTimelineItem, 120);
+                await delay(600);
+                showTooltip('Enriching lead data and verifying contact information. This includes phone validation, email deliverability checks, and geographic matching.', enrichTimelineItem, 'left');
+                updateTimeline('enrich', 'active');
+                highlightElement(enrichTimelineItem);
+                const enrichItem = document.querySelector('.timeline-item[data-step="enrich"] .timeline-item-desc');
+                enrichItem.innerHTML = '<span class="spinner"></span> Processing...';
+                await delay(5000); // Longer processing time
+                hideTooltip();
+                enrichItem.innerHTML = '<span style="color: #10b981;">✓ Data validated & enhanced</span>';
+                updateTimeline('enrich', 'completed');
+                await delay(1500);
+
+                // Step 3: Select lead and show score
+                const scorePanel = document.getElementById('scorePanel');
+                selectLead(lead, true); // Force selection during demo
+                await delay(300); // Wait for panel to render
+                scrollToElement(scorePanel, 120);
+                await delay(800);
+                highlightElement(scorePanel);
+                showTooltip(`Calculating Trust Score for ${lead.name}. The AI analyzes multiple signals including answer likelihood, intent strength, and data confidence.`, scorePanel, 'left');
+                updateTimeline('score', 'active');
+                await delay(4000); // Time to read tooltip
+                hideTooltip();
+                await delay(2500); // Wait for score animation to complete
+                showTooltip(`Trust Score: ${lead.score}/100. This score combines answer likelihood (${lead.subScores.answerLikelihood}%), intent strength (${lead.subScores.intentStrength}%), and data confidence (${lead.subScores.dataConfidence}%).`, scorePanel, 'left');
+                await delay(5000); // Time to read detailed score explanation
+                hideTooltip();
+                updateTimeline('score', 'completed');
+                await delay(2000);
+
+                // Step 4: Routing decision
+                const routeTimelineItem = document.querySelector('.timeline-item[data-step="route"]');
+                scrollToElement(routeTimelineItem, 120);
+                await delay(600);
+                const tierText = lead.tier === 'A' ? 'Tier A (High Priority)' : lead.tier === 'B' ? 'Tier B (Medium Priority)' : 'Hold (Needs Review)';
+                showTooltip(`Trust Score: ${lead.score}. Based on this score, the lead will be routed to ${tierText}. This automated decision ensures optimal lead distribution.`, routeTimelineItem, 'left');
+                updateTimeline('route', 'active');
+                highlightElement(routeTimelineItem);
+                await delay(5000); // Time to read routing explanation
+                hideTooltip();
+                showRoutingOutput(lead.tier, lead);
+                const routingOutput = document.getElementById('routingOutput');
+                scrollToElement(routingOutput, 120);
+                await delay(800);
+                highlightElement(routingOutput);
+                await delay(3000); // Time to read routing output
+                updateTimeline('route', 'completed');
+                await delay(2000);
+
+                // Step 5: Push to CRM
+                const crmTimelineItem = document.querySelector('.timeline-item[data-step="crm"]');
+                scrollToElement(crmTimelineItem, 120);
+                await delay(600);
+                showTooltip('Syncing lead data with client CRM system. The lead information, Trust Score, and routing decision are automatically pushed to your CRM in real-time.', crmTimelineItem, 'left');
+                updateTimeline('crm', 'active');
+                highlightElement(crmTimelineItem);
+                const crmItem = document.querySelector('.timeline-item[data-step="crm"] .timeline-item-desc');
+                crmItem.innerHTML = '<span class="spinner"></span> Syncing to CRM...';
+                await delay(5000); // Longer sync time
+                hideTooltip();
+                crmItem.innerHTML = '<span style="color: #10b981;">✓ Synced successfully to CRM</span>';
+                updateTimeline('crm', 'completed');
+                await delay(2500);
+
+                // Step 6: Notify rep
+                const notifyTimelineItem = document.querySelector('.timeline-item[data-step="notify"]');
+                scrollToElement(notifyTimelineItem, 120);
+                await delay(600);
+                showTooltip('Sending notification to assigned sales representative. The rep receives an instant alert with lead details and priority level for immediate follow-up.', notifyTimelineItem, 'left');
+                updateTimeline('notify', 'active');
+                highlightElement(notifyTimelineItem);
+                await delay(4000); // Time to read notification explanation
+                hideTooltip();
+                updateTimeline('notify', 'completed');
+                await delay(2000);
+
+                // Step 7: Log outcome
+                const outcomeTimelineItem = document.querySelector('.timeline-item[data-step="outcome"]');
+                scrollToElement(outcomeTimelineItem, 120);
+                await delay(600);
+                showTooltip('Recording outcome metrics and updating performance dashboard. All routing decisions and outcomes are tracked to continuously improve lead quality.', outcomeTimelineItem, 'left');
+                updateTimeline('outcome', 'active');
+                highlightElement(outcomeTimelineItem);
+                await delay(4000); // Time to read outcome explanation
+                hideTooltip();
+                updateTimeline('outcome', 'completed');
+                await delay(2000);
+
+                // Update impact metrics
+                updateImpactMetrics(lead);
+                const impactWidget = document.getElementById('impactWidget');
+                scrollToElement(impactWidget, 120);
+                await delay(800);
+                highlightElement(impactWidget);
+                showTooltip('Client impact metrics updated based on routing decision. These metrics show the real business value: improved connect rates, time savings, and reduced lead waste.', impactWidget, 'left');
+                await delay(5000); // Time to read impact metrics
+                hideTooltip();
+                await delay(2000);
+
+                // Update lead status
+                lead.status = 'routed';
+                renderLeads();
+                const updatedLeadCard = document.querySelector(`[data-lead-id="${lead.id}"]`);
+                if (updatedLeadCard) {
+                    scrollToElement(updatedLeadCard, 120);
+                    await delay(600);
+                    highlightElement(updatedLeadCard);
+                    await delay(2000);
+                }
+
+                // Wait before next lead
+                if (i < demoLeads.length - 1) {
+                    showTooltip(`Processing next lead... This demonstrates how DarkFlow handles multiple leads with different quality scores.`, document.querySelector('.leads-panel'), 'right');
+                    await delay(3000);
+                    hideTooltip();
+                    await delay(leadDelay);
+                }
+            }
+
+            // Show final CTA
+            await delay(2000);
+            const finalCta = document.getElementById('finalCta');
+            finalCta.classList.remove('hidden');
+            scrollToElement(finalCta, 120);
+            await delay(800);
+            highlightElement(finalCta);
+            showTooltip('Ready to transform your lead quality? Book a call to get started! DarkFlow can be integrated into your system in just 10-14 days.', finalCta, 'top');
+            await delay(6000); // Longer time to read final CTA
+            hideTooltip();
+
+            isDemoRunning = false;
+            document.getElementById('autoDemoBtn').disabled = false;
+            document.getElementById('autoDemoBtn').textContent = 'Auto Demo';
+        }
+
+        // Reset demo
+        function resetDemo() {
+            // Clear timeouts
+            if (demoTimeout) {
+                clearTimeout(demoTimeout);
+            }
+            
+            // Reset leads
+            currentLeads = leadsData.map(lead => ({ ...lead, status: 'new' }));
+            selectedLead = null;
+            
+            // Reset UI
+            renderLeads();
+            document.getElementById('scorePanel').innerHTML = '<div class="empty">Select a lead to view Trust Score details</div>';
+            document.getElementById('scorePanel').className = 'score-panel empty';
+            
+            // Reset timeline
+            document.querySelectorAll('.timeline-item').forEach(item => {
+                item.className = 'timeline-item';
+            });
+            
+            // Hide outputs
+            document.getElementById('routingOutput').style.display = 'none';
+            document.getElementById('impactWidget').style.display = 'none';
+            document.getElementById('finalCta').classList.add('hidden');
+            
+            hideTooltip();
+        }
+
+        // Delay helper
+        function delay(ms) {
+            return new Promise(resolve => {
+                demoTimeout = setTimeout(resolve, ms);
+            });
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            document.getElementById('autoDemoBtn').addEventListener('click', runAutoDemo);
+            document.getElementById('resetBtn').addEventListener('click', resetDemo);
+            
+            const bookCallBtn = document.getElementById('bookCallBtn');
+            const bookCallBtn2 = document.getElementById('bookCallBtn2');
+            
+            const mailtoLink = `mailto:usama.saleem@genaxai.com?subject=Discovery%20Call&body=Hi%20Usama%2C%0A%0AI%27d%20like%20to%20book%20a%2015-min%20discovery%20call%20to%20discuss%20this%20further.%0A%0AWhat%20times%20work%20best%20for%20you%20this%20week%3F%0A%0AThanks`;
+            
+            bookCallBtn.addEventListener('click', () => {
+                window.location.href = mailtoLink;
+            });
+            
+            bookCallBtn2.addEventListener('click', () => {
+                window.location.href = mailtoLink;
+            });
+            
+            document.getElementById('closeCtaBtn').addEventListener('click', () => {
+                document.getElementById('finalCta').classList.add('hidden');
+            });
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
